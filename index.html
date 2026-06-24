@@ -1,347 +1,540 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mytical AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mytical AI</title>
 
-<style>
-body{
-margin:0;
-font-family:system-ui, Arial;
-background: radial-gradient(circle at top, #1a1a2e, #0f0f0f);
-color:white;
-display:flex;
-height:100vh;
-overflow:hidden;
-}
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at top, #1a1a2e, #0f0f0f);
+            --primary: #7c3aed;
+            --secondary: #22c55e;
+            --user-msg: linear-gradient(135deg, #2563eb, #1d4ed8);
+            --bot-msg: rgba(255, 255, 255, 0.06);
+            --sidebar-bg: #111122;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --topbar-bg: rgba(15, 15, 15, 0.7);
+        }
 
-/* SIDEBAR FUTURISTA */
-#sidebar{
-width:260px;
-background: rgba(255,255,255,0.05);
-backdrop-filter: blur(12px);
-border-right: 1px solid rgba(255,255,255,0.08);
-padding:12px;
-display:flex;
-flex-direction:column;
-}
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: var(--bg-gradient);
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-#newChat{
-background: linear-gradient(135deg,#7c3aed,#22c55e);
-border:none;
-padding:12px;
-border-radius:10px;
-cursor:pointer;
-color:white;
-font-weight:600;
-margin-bottom:10px;
-box-shadow:0 0 15px rgba(124,58,237,0.4);
-}
+        /* BANNER TOPO MOBILE */
+        #mobile-header {
+            display: none;
+            background: var(--topbar-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 90;
+        }
 
-.chatItem{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:10px;
-margin-bottom:6px;
-border-radius:10px;
-cursor:pointer;
-background: rgba(255,255,255,0.06);
-transition:0.2s;
-}
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
 
-.chatItem:hover{
-background: rgba(255,255,255,0.12);
-transform: scale(1.02);
-}
+        /* SIDEBAR */
+        #sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
 
-.btns button{
-background:none;
-border:none;
-cursor:pointer;
-color:#aaa;
-margin-left:5px;
-font-size:14px;
-}
+        /* Topo da Sidebar (Onde fica o botão de fechar) */
+        .sidebar-top {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-.delBtn{color:#ff4d4d;}
+        .close-sidebar-btn {
+            display: none; /* Oculto no PC */
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+        }
 
-/* CHAT AREA */
-#main{
-flex:1;
-display:flex;
-flex-direction:column;
-}
+        #newChat {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+        }
 
-#box{
-flex:1;
-overflow-y:auto;
-padding:20px;
-display:flex;
-flex-direction:column;
-gap:10px;
-}
+        #chatList {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-/* MENSAGENS */
-.msg{
-padding:12px 14px;
-border-radius:14px;
-max-width:70%;
-word-wrap:break-word;
-line-height:1.4;
-animation: fadeIn 0.2s ease;
-}
+        .chatItem {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
 
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(10px);}
-to{opacity:1;transform:translateY(0);}
-}
+        .chatItem:hover, .chatItem.active {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
 
-.user{
-background: linear-gradient(135deg,#2563eb,#1d4ed8);
-align-self:flex-end;
-box-shadow:0 0 12px rgba(37,99,235,0.4);
-}
+        .chatItem.active { box-shadow: inset 4px 0 0 var(--primary); }
+        .chatItem span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; font-size: 14px; }
 
-.bot{
-background: rgba(255,255,255,0.08);
-border:1px solid rgba(255,255,255,0.1);
-align-self:flex-start;
-}
+        .btns button { background: none; border: none; cursor: pointer; color: #aaa; margin-left: 5px; font-size: 14px; }
+        .btns .delBtn:hover { color: #ff4d4d; }
 
-/* INPUT BAR */
-.area{
-display:flex;
-padding:12px;
-gap:10px;
-background: rgba(255,255,255,0.04);
-backdrop-filter: blur(10px);
-border-top:1px solid rgba(255,255,255,0.08);
-}
+        /* MAIN CONTAINER */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
 
-input{
-flex:1;
-padding:12px;
-border:none;
-border-radius:12px;
-outline:none;
-background: rgba(255,255,255,0.08);
-color:white;
-}
+        #box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 80px;
+        }
 
-input::placeholder{
-color:#aaa;
-}
+        /* MENSAGENS */
+        .msg {
+            padding: 14px 18px;
+            border-radius: 16px;
+            max-width: 75%;
+            word-wrap: break-word;
+            line-height: 1.6;
+            font-size: 15px;
+            animation: fadeIn 0.2s ease-out;
+        }
 
-.send{
-background: linear-gradient(135deg,#22c55e,#16a34a);
-color:white;
-border:none;
-border-radius:12px;
-padding:12px 16px;
-cursor:pointer;
-font-weight:600;
-box-shadow:0 0 12px rgba(34,197,94,0.4);
-}
+        .user {
+            background: var(--user-msg);
+            align-self: flex-end;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+            border-bottom-right-radius: 4px;
+        }
 
-/* SCROLLBAR */
-#box::-webkit-scrollbar{
-width:6px;
-}
+        .bot {
+            background: var(--bot-msg);
+            border: 1px solid var(--border-color);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            width: 100%;
+            max-width: 80%;
+        }
 
-#box::-webkit-scrollbar-thumb{
-background:#444;
-border-radius:10px;
-}
-</style>
+        .bot pre {
+            background: #090911;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin: 10px 0;
+        }
+        .bot code {
+            font-family: 'Courier New', Courier, monospace;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        .bot p { margin: 6px 0; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* INPUT BAR */
+        .area {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            display: flex;
+            padding: 16px;
+            gap: 12px;
+            background: linear-gradient(to top, #0f0f0f 80%, transparent);
+            z-index: 80;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 2px 8px;
+            align-items: center;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: white;
+            font-size: 15px;
+        }
+
+        .send {
+            background: linear-gradient(135deg, var(--secondary), #16a34a);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0 22px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        /* MODAIS */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .modal-box {
+            background: #161626;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .modal-box h3 { margin: 0; font-size: 18px; }
+        .modal-box p { margin: 0; color: #aaa; font-size: 14px; line-height: 1.4; }
+        .modal-box input { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px;}
+        .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-btns button { padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-cancel { background: rgba(255, 255, 255, 0.1); color: white; }
+        .btn-confirm-del { background: #ff4d4d; color: white; }
+        .btn-confirm-save { background: var(--primary); color: white; }
+
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 95;
+        }
+
+        /* 📱 RESPONSIVIDADE (MOBILE) */
+        @media (max-width: 768px) {
+            #mobile-header { display: flex; }
+            
+            #sidebar {
+                position: fixed;
+                top: 0; bottom: 0; left: 0;
+                transform: translateX(-100%);
+            }
+            
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* Mostra o botão de fechar apenas no telemóvel */
+            .close-sidebar-btn {
+                display: block;
+            }
+
+            #sidebar.open ~ #sidebar-overlay {
+                display: block;
+            }
+
+            #box {
+                padding: 16px;
+                margin-top: 60px;
+            }
+
+            .msg { max-width: 85%; }
+            .bot { max-width: 95%; }
+        }
+    </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<div id="sidebar">
-<button id="newChat" onclick="startNewChat()">＋ Nova conversa</button>
-<div id="chatList"></div>
-</div>
+    <div id="mobile-header">
+        <button class="menu-btn" onclick="toggleSidebar(true)">☰</button>
+        <span style="font-weight:700; background:linear-gradient(135deg, #a78bfa, #4ade80); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Mytical AI</span>
+        <div style="width:24px;"></div>
+    </div>
 
-<!-- CHAT -->
-<div id="main">
-<div id="box"></div>
+    <div id="sidebar-overlay" onclick="toggleSidebar(false)"></div>
 
-<div class="area">
-<input id="txt" placeholder="Escreve para a Mytical AI...">
-<button class="send" onclick="send()">Enviar</button>
-</div>
-</div>
+    <div id="sidebar">
+        <div class="sidebar-top">
+            <button class="close-sidebar-btn" onclick="toggleSidebar(false)">✕ Fechar Menu</button>
+            <button id="newChat" onclick="startNewChat()">＋ Nova conversa</button>
+        </div>
+        <div id="chatList"></div>
+    </div>
+
+    <div id="main">
+        <div id="box"></div>
+
+        <div class="area">
+            <div class="input-wrapper">
+                <input id="txt" placeholder="Pergunta-me qualquer coisa..." onkeypress="handleKeyPress(event)">
+            </div>
+            <button class="send" onclick="send()">Enviar</button>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Editar nome</h3>
+            <input id="editInput" type="text">
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal('editModal')">Cancelar</button>
+                <button class="btn-confirm-save" onclick="saveCustomName()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Apagar histórico?</h3>
+            <p>Esta ação não pode ser desfeita.</p>
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal('deleteModal')">Cancelar</button>
+                <button class="btn-confirm-del" onclick="confirmCustomDelete()">Apagar</button>
+            </div>
+        </div>
+    </div>
 
 <script>
+    let chats = JSON.parse(localStorage.getItem("mytical_chats") || "{}");
+    let currentChat = null;
+    let chatTargetId = null;
 
-let chats = JSON.parse(localStorage.getItem("mytical_chats") || "{}");
-let currentChat = null;
+    /* ---------------- CONTROLO RESPONSIVO ---------------- */
+    function toggleSidebar(open) {
+        const sidebar = document.getElementById("sidebar");
+        if(open) sidebar.classList.add("open");
+        else sidebar.classList.remove("open");
+    }
 
-/* ---------------- CHAT ---------------- */
+    /* ---------------- LÓGICA DO CHAT ---------------- */
+    function startNewChat() {
+        let id = "chat_" + Date.now();
+        chats[id] = { name: "Nova conversa", messages: [] };
+        currentChat = id;
+        save();
+        renderChats();
+        loadChat(id);
+        addBot("Olá! Sou a **Mytical AI**. Estou otimizada e pronta para responder às tuas perguntas, ajudar com teorias ou gerar blocos de código. O que vamos programar ou discutir hoje? 🚀");
+        toggleSidebar(false);
+    }
 
-function startNewChat(){
+    function renderChats() {
+        let list = document.getElementById("chatList");
+        list.innerHTML = "";
+        for (let id in chats) {
+            let chat = chats[id];
+            let div = document.createElement("div");
+            div.className = "chatItem" + (id === currentChat ? " active" : "");
+            
+            let name = document.createElement("span");
+            name.textContent = chat.name;
 
-let id="chat_"+Date.now();
+            let btns = document.createElement("div");
+            btns.className = "btns";
 
-chats[id]={
-name:"Nova conversa",
-messages:[]
-};
+            let edit = document.createElement("button");
+            edit.innerHTML = "✏️";
+            edit.onclick = (e) => { e.stopPropagation(); openEditModal(id); };
 
-currentChat=id;
+            let del = document.createElement("button");
+            del.innerHTML = "🗑";
+            del.className = "delBtn";
+            del.onclick = (e) => { e.stopPropagation(); openDeleteModal(id); };
 
-save();
-renderChats();
-loadChat(id);
+            btns.appendChild(edit);
+            btns.appendChild(del);
+            div.onclick = () => { loadChat(id); toggleSidebar(false); };
+            div.appendChild(name);
+            div.appendChild(btns);
+            list.appendChild(div);
+        }
+    }
 
-addBot("Nova conversa criada ✨");
+    function loadChat(id) {
+        currentChat = id;
+        clearBox();
+        renderChats();
+        chats[id].messages.forEach(m => add(m.text, m.type, false));
+        scrollDown();
+    }
 
-}
+    /* ---------------- SISTEMA DE MODAIS ---------------- */
+    function openEditModal(id) {
+        chatTargetId = id;
+        let inp = document.getElementById("editInput");
+        inp.value = chats[id].name;
+        document.getElementById("editModal").style.display = "flex";
+        inp.focus();
+    }
+    function saveCustomName() {
+        let name = document.getElementById("editInput").value.trim();
+        if (name && chatTargetId) { chats[chatTargetId].name = name; save(); renderChats(); }
+        closeModal('editModal');
+    }
+    function openDeleteModal(id) { chatTargetId = id; document.getElementById("deleteModal").style.display = "flex"; }
+    function confirmCustomDelete() {
+        if (chatTargetId) {
+            delete chats[chatTargetId];
+            save(); renderChats();
+            if (currentChat === chatTargetId) {
+                clearBox(); currentChat = null;
+                let keys = Object.keys(chats);
+                if(keys.length > 0) loadChat(keys[0]); else startNewChat();
+            }
+        }
+        closeModal('deleteModal');
+    }
+    function closeModal(mId) { document.getElementById(mId).style.display = "none"; chatTargetId = null; }
 
-function renderChats(){
+    /* ---------------- MOTOR AUXILIAR & FORMATADOR ---------------- */
+    function save() { localStorage.setItem("mytical_chats", JSON.stringify(chats)); }
+    function clearBox() { document.getElementById("box").innerHTML = ""; }
+    function scrollDown() { let b = document.getElementById("box"); b.scrollTop = b.scrollHeight; }
+    function handleKeyPress(e) { if (e.key === "Enter") send(); }
 
-let list=document.getElementById("chatList");
-list.innerHTML="";
+    function parseMarkdown(text) {
+        let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        html = html.replace(/```([\s\S]+?)```/g, '<pre><code>$1</code></pre>');
+        html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+        html = html.split('\n').map(line => line.startsWith('<pre>') || line.startsWith('<strong>') ? line : `<p>${line}</p>`).join('');
+        return html;
+    }
 
-for(let id in chats){
+    function add(text, type, saveMsg = true) {
+        let div = document.createElement("div");
+        div.className = "msg " + type;
+        
+        if(type === "bot") {
+            div.innerHTML = parseMarkdown(text);
+        } else {
+            div.textContent = text;
+        }
 
-let chat=chats[id];
+        document.getElementById("box").appendChild(div);
+        scrollDown();
 
-let div=document.createElement("div");
-div.className="chatItem";
+        if (saveMsg && currentChat) {
+            chats[currentChat].messages.push({ text, type });
+            save();
+        }
+    }
 
-let name=document.createElement("span");
-name.textContent=chat.name;
+    function addUser(t) { add(t, "user"); }
+    function addBot(t) { add(t, "bot"); }
 
-let btns=document.createElement("div");
-btns.className="btns";
+    /* ---------------- INTELIGÊNCIA ARTIFICIAL SIMULADA ---------------- */
+    function reply(text) {
+        let low = text.toLowerCase().trim();
 
-let edit=document.createElement("button");
-edit.innerHTML="✏️";
-edit.onclick=(e)=>{
-e.stopPropagation();
-let n=prompt("Novo nome:",chat.name);
-if(n){chat.name=n;save();renderChats();}
-};
+        let expr = low.replace(/×/g, "*").replace(/x/g, "*").replace(/÷/g, "/").replace(/\^/g, "**");
+        try {
+            if (/^[0-9+\-*/().\s**]+$/.test(expr)) {
+                let res = Function("return (" + expr + ")")();
+                return `Análise concluída com sucesso.\nO resultado da tua expressão matemática é:\n\`\`\`\n${res}\n\`\`\``;
+            }
+        } catch {}
 
-let del=document.createElement("button");
-del.innerHTML="🗑";
-del.className="delBtn";
-del.onclick=(e)=>{
-e.stopPropagation();
-if(confirm("Apagar conversa?")){
-delete chats[id];
-save();
-renderChats();
-if(currentChat===id) clearBox();
-}
-};
+        if (low.includes("codigo") || low.includes("html") || low.includes("javascript") || low.includes("css") || low.includes("funcao") || low.includes("program")) {
+            return `Aqui está uma estrutura exemplar gerada com base no teu pedido:\n\n\`\`\`javascript\n// Exemplo de automação gerado pela Mytical AI\nfunction processarDados(usuario) {\n    console.log("A processar...");\n    return {\n        status: "Sucesso",\n        data: new Date(),\n        id: Math.random().toString(36).substr(2, 9)\n    };\n}\n\`\`\`\n\nPodes adaptar esta lógica para o teu ambiente de desenvolvimento. Se precisares de alguma linguagem específica como Python ou PHP, basta detalhar!`;
+        }
 
-btns.appendChild(edit);
-btns.appendChild(del);
+        if (low.includes("como") || low.includes("o que") || low.includes("porque") || low.includes("por que") || low.includes("explica")) {
+            return `Essa é uma excelente pergunta conceitual. Como uma **IA de processamento lógico**, posso quebrar essa explicação em tópicos estruturados:\n\n1. **Definição Base:** Todo o conceito complexo baseia-se em regras modulares.\n2. **Funcionamento:** O fluxo de dados entra, passa por uma validação sistémica e gera uma resposta tratada.\n3. **Importância:** Compreender este fluxo permite-te otimizar tarefas mecânicas e focar no raciocínio abstrato.\n\nGostarias de aprofundar algum destes pontos específicos?`;
+        }
 
-div.onclick=()=>loadChat(id);
+        if (low.includes("ola") || low.includes("oi") || low.includes("cumprimentos")) return "Olá! Como está a correr o teu dia? Estou pronta para analisar os teus dados ou tirar dúvidas.";
+        if (low.includes("nome") || low.includes("quem es")) return "Eu sou a **Mytical AI**, um modelo local adaptado para otimização de interfaces e respostas rápidas.";
+        if (low.includes("como estas")) return "Estou operacional a **100%** e pronta para processar novas instruções! E contigo?";
 
-div.appendChild(name);
-div.appendChild(btns);
+        const fallbacks = [
+            `Interessante perspetiva. Analisando o termo "${text}", compreendo que envolve uma abordagem contextual ampla. No campo tecnológico e científico, focar-nos-ia em padrões reutilizáveis.\n\nQueres formular uma pergunta direta sobre isso para que eu monte um algoritmo explicativo?`,
+            `Entendido! O teu comando "${text}" ativa cenários de análise múltipla. Para te dar a melhor resposta, podes especificar se pretendes um exemplo prático ou um resumo teórico sobre este assunto?`,
+            `Recebi o teu comando. Como modelo de linguagem local, interpreto isso como um pedido de análise conceitual. Recomendo estruturar em passos lógicos se quiseres desenvolver essa ideia!`
+        ];
+        
+        return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
 
-list.appendChild(div);
+    /* ---------------- AÇÃO DE ENVIO ---------------- */
+    function send() {
+        let input = document.getElementById("txt");
+        let t = input.value.trim();
+        if (!t) return;
 
-}
+        if (currentChat && chats[currentChat].name === "Nova conversa" && chats[currentChat].messages.length <= 1) {
+            chats[currentChat].name = t.length > 18 ? t.substring(0, 18) + "..." : t;
+            renderChats();
+        }
 
-}
+        addUser(t);
+        input.value = "";
 
-function loadChat(id){
-currentChat=id;
-clearBox();
+        setTimeout(() => { addBot(reply(t)); }, 400);
+    }
 
-chats[id].messages.forEach(m=>{
-add(m.text,m.type,false);
-});
-
-}
-
-/* ---------------- SAVE ---------------- */
-
-function save(){
-localStorage.setItem("mytical_chats",JSON.stringify(chats));
-}
-
-/* ---------------- UI ---------------- */
-
-function clearBox(){
-document.getElementById("box").innerHTML="";
-}
-
-function add(text,type,saveMsg=true){
-
-let div=document.createElement("div");
-div.className="msg "+type;
-div.textContent=text;
-
-document.getElementById("box").appendChild(div);
-
-document.getElementById("box").scrollTop=
-document.getElementById("box").scrollHeight;
-
-if(saveMsg && currentChat){
-chats[currentChat].messages.push({text,type});
-save();
-}
-
-}
-
-function addUser(t){add(t,"user");}
-function addBot(t){add("Mytical AI: "+t,"bot");}
-
-/* ---------------- IA ---------------- */
-
-function reply(text){
-
-text=text.toLowerCase();
-
-/* matemática */
-let expr=text
-.replace(/×/g,"*")
-.replace(/x/g,"*")
-.replace(/÷/g,"/")
-.replace(/\^/g,"**");
-
-try{
-if(/^[0-9+\-*/().\s**]+$/.test(expr)){
-return "Resultado: "+Function("return ("+expr+")")();
-}
-}catch{}
-
-if(text.includes("ola")) return "Olá 👋";
-if(text.includes("nome")) return "Sou a Mytical AI.";
-if(text.includes("como estas")) return "Estou bem 😄";
-
-return "Posso ajudar-te com contas e ideias de código.";
-}
-
-/* ---------------- SEND ---------------- */
-
-function send(){
-
-let input=document.getElementById("txt");
-let t=input.value.trim();
-if(!t)return;
-
-addUser(t);
-
-setTimeout(()=>{
-addBot(reply(t));
-},250);
-
-input.value="";
-}
-
-/* INIT */
-startNewChat();
-
+    /* INICIALIZAÇÃO */
+    if (Object.keys(chats).length > 0) { loadChat(Object.keys(chats)[0]); } else { startNewChat(); }
 </script>
 
 </body>
